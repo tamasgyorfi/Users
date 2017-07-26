@@ -14,6 +14,12 @@
             <artifactId>common-infrastructure</artifactId>
             <version>1.0.16</version>
         </dependency>
+
+        <dependency>
+            <groupId>hu.bets</groupId>
+            <artifactId>service-discovery</artifactId>
+            <version>0.0.4</version>
+        </dependency>
     </dependencies>
 
     <build>
