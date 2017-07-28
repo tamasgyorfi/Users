@@ -15,7 +15,7 @@ public class ApplicationConfig {
 
     @Bean
     public FriendsDAO friendsDAO() {
-        return new DefaultFriendsDAO();
+        return new DefaultFriendsDAO(null);
     }
 
     @Bean
