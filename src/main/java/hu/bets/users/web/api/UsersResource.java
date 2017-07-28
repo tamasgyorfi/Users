@@ -1,5 +1,6 @@
 package hu.bets.users.web.api;
 
+import hu.bets.users.service.FriendsService;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.Consumes;
@@ -10,6 +11,12 @@ import javax.ws.rs.core.MediaType;
 @Component
 @Path("/users/football/v1")
 public class UsersResource {
+
+    private FriendsService friendsService;
+
+    public UsersResource(FriendsService friendsService) {
+        this.friendsService = friendsService;
+    }
 
     @Path("info")
     @Produces(MediaType.TEXT_HTML)
