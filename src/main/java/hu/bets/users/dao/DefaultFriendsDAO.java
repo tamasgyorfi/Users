@@ -1,23 +1,18 @@
 package hu.bets.users.dao;
 
 import hu.bets.users.model.User;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Transaction;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.Session;
 
 import java.util.List;
 
 public class DefaultFriendsDAO implements FriendsDAO {
 
-    private static final String USER = "User";
-    private static final String USER_ID = "userId";
-    private static final String NAME = "name";
-    private static final String PROFILE_PICTURE = "profilePicture";
-    private GraphDatabaseService dbService;
+    private static final String CREATE_USER_COMMAND = "MERGE (u:%s {userId: '%s', name:'%s', profilePicture: '%s'})";
+    private Driver driver;
 
-    public DefaultFriendsDAO(GraphDatabaseService dbService) {
-        this.dbService = dbService;
+    public DefaultFriendsDAO(Driver driver) {
+        this.driver = driver;
     }
 
     @Override
@@ -32,18 +27,8 @@ public class DefaultFriendsDAO implements FriendsDAO {
 
     @Override
     public void registerUser(User user) {
-        Transaction transaction = dbService.beginTx();
-        try {
-
-            Node userNode = dbService.createNode(Label.label(USER));
-            userNode.setProperty(USER_ID, user.getUserId());
-            userNode.setProperty(NAME, user.getName());
-            userNode.setProperty(PROFILE_PICTURE, user.getProfilePictureUrl());
-
-            transaction.success();
-        } catch (Exception e) {
-            transaction.failure();
-            throw e;
+        try (Session session = driver.session("register.user")) {
+            session.run(String.format(CREATE_USER_COMMAND, user.getUserId(), user.getUserId(), user.getName(), user.getProfilePictureUrl()));
         }
     }
 }

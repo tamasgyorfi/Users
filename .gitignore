@@ -1,3 +1,5 @@
 /target
 users.iml
 .idea/
+src/test/resources/credentials.txt
+football-users.iml

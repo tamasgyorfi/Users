@@ -4,6 +4,7 @@ import com.netflix.config.ConfigurationManager;
 import hu.bets.servicediscovery.EurekaFacade;
 import hu.bets.services.Services;
 import hu.bets.users.config.ApplicationConfig;
+import hu.bets.users.config.DatabaseConfig;
 import hu.bets.users.config.WebConfig;
 import org.eclipse.jetty.server.Server;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ public class Starter {
 
     private final ApplicationContext context = new AnnotationConfigApplicationContext(
             ApplicationConfig.class,
+            DatabaseConfig.class,
             WebConfig.class);
 
     public static void main(String[] args) {
@@ -40,7 +42,7 @@ public class Starter {
     }
 
     private void registerForDiscovery(EurekaFacade eurekaFacade) {
-//        eurekaFacade.registerNonBlockingly(Services.USERS.getServiceName());
+        eurekaFacade.registerNonBlockingly(Services.USERS.getServiceName());
     }
 
     private void startServer(Server server) {
