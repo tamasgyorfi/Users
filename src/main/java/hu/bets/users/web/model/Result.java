@@ -19,4 +19,16 @@ public class Result<T> {
     public static Result error(String errorMessage, String token) {
         return new Result("", errorMessage, token);
     }
+
+    public T getPayload() {
+        return payload;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public String getToken() {
+        return token;
+    }
 }

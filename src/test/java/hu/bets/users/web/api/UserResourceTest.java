@@ -5,13 +5,16 @@ import hu.bets.servicediscovery.EurekaFacade;
 import hu.bets.users.config.ApplicationConfig;
 import hu.bets.users.config.DatabaseConfig;
 import hu.bets.users.config.WebConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.server.Server;
-import org.junit.Before;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.Session;
@@ -33,12 +36,12 @@ import static org.junit.Assert.assertEquals;
 
 public class UserResourceTest {
     private static final String CREDENTIALS_FILE = "credentials.txt";
-    private ApplicationContext context;
+    private static ApplicationContext context;
 
-    @Before
-    public void before() throws Exception {
+    @BeforeClass
+    public static void before() throws Exception {
         String home = System.getProperty("user.dir");
-        URL resource = this.getClass().getClassLoader().getResource(CREDENTIALS_FILE);
+        URL resource = UserResourceTest.class.getClassLoader().getResource(CREDENTIALS_FILE);
 
         List<String> strings = Files.readAllLines(Paths.get(resource.toURI()));
 
@@ -57,18 +60,18 @@ public class UserResourceTest {
         TimeUnit.SECONDS.sleep(2);
     }
 
+    @After
+    public void tearDown() {
+        Driver driver = context.getBean(Driver.class);
+        try (Session session = driver.session("delete.users")) {
+            session.run("MATCH (n) DETACH DELETE n");
+        }
+    }
+
     @Test
     public void registerShouldAddOneUser() throws IOException {
 
-        CloseableHttpClient client = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://" + System.getProperties().getProperty("HOST") +
-                ":" + System.getProperties().getProperty("PORT") + "/users/football/v1/register");
-        StringEntity entity = new StringEntity("{\"id\": \"id1\" , \"pictureUrl\":\"none\", \"name\":\"name\", \"token\":\"\"}", HTTP.UTF_8);
-
-        entity.setContentType("application/json");
-        request.setEntity(entity);
-
-        client.execute(request);
+        runPost("/users/football/v1/register", "{\"id\": \"id1\" , \"pictureUrl\":\"none\", \"name\":\"name\", \"token\":\"\"}");
 
         Driver driver = context.getBean(Driver.class);
         try (Session session = driver.session("read.user")) {
@@ -79,9 +82,41 @@ public class UserResourceTest {
             assertEquals("id1", records.get(0).asString());
             assertEquals("none", records.get(1).asString());
             assertEquals("name", records.get(2).asString());
-
-            session.run("MATCH (n) DETACH DELETE n");
         }
+    }
+
+    @Test
+    public void shoudReturnAllFriendsForAUser() throws IOException {
+
+        Driver driver = context.getBean(Driver.class);
+        try (Session session = driver.session("read.user")) {
+            session.run("MERGE (u:User {userId: '101', name:'John', profilePicture: 'none'})");
+            session.run("MERGE (u:User {userId: '202', name:'Jack', profilePicture: 'nnnn'})");
+            session.run("MERGE (u:User {userId: '303', name:'Bill', profilePicture: 'mmmm'})");
+            session.run("MERGE (u:User {userId: '404', name:'Ronn', profilePicture: 'llll'})");
+
+            session.run("MATCH (u1:User {userId:'101'}), (u2:User {userId:'202'}) CREATE (u1)-[:TRACKS]->(u2)");
+            session.run("MATCH (u1:User {userId:'101'}), (u2:User {userId:'303'}) CREATE (u1)-[:TRACKS]->(u2)");
+            session.run("MATCH (u1:User {userId:'303'}), (u2:User {userId:'404'}) CREATE (u1)-[:TRACKS]->(u2)");
+        }
+
+        String result = runPost("/users/football/v1/friends", "{\"id\": \"101\" , \"token\":\"\"}");
+
+        assertEquals("{\"payload\":[{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+    }
+
+    private String runPost(String path, String payload) throws IOException {
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+        HttpPost request = new HttpPost("http://" + System.getProperties().getProperty("HOST") +
+                ":" + System.getProperties().getProperty("PORT") + path);
+        StringEntity entity = new StringEntity(payload, HTTP.UTF_8);
+
+        entity.setContentType("application/json");
+        request.setEntity(entity);
+
+        CloseableHttpResponse result = client.execute(request);
+
+        return EntityUtils.toString(request.getEntity());
     }
 
     private static class FakeApplicationConfig extends ApplicationConfig {
