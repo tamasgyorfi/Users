@@ -56,7 +56,7 @@ public class DefaultFriendsDAO implements FriendsDAO {
 
     @Override
     public List<User> getFriends(String userId) {
-        try (Session session = driver.session("register.user")) {
+        try (Session session = driver.session("query.user.friends")) {
             session.run(String.format(ALL_FRIENDS_COMMAND, userId));
         }
 
