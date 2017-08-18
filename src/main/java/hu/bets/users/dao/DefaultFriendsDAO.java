@@ -10,7 +10,7 @@ import java.util.List;
 
 public class DefaultFriendsDAO implements FriendsDAO {
 
-    private static final String ALL_FRIENDS_COMMAND = "";
+    private static final String ALL_FRIENDS_COMMAND = "MATCH p=(u1:User { userId:'%s' })-[:TRACKS]-(u2) RETURN DISTINCT u2;";
     private static final String CREATE_USER_COMMAND = "MERGE (u:User {userId: '%s', name:'%s', profilePicture: '%s'})";
     private static final String CREATE_RELATIONSHIP_COMMAND = "MATCH (u1:User {userId:'%s'}), (u2:User {userId:'%s'}) CREATE (u1)-[:TRACKS]->(u2)";
     private static final String DELETE_RELATIONSHIP_COMMAND = "MATCH (:User {userId: '%s'})-[r:TRACKS]-(:User {userId: '%s'}) DELETE r";
@@ -56,6 +56,10 @@ public class DefaultFriendsDAO implements FriendsDAO {
 
     @Override
     public List<User> getFriends(String userId) {
+        try (Session session = driver.session("register.user")) {
+            session.run(String.format(ALL_FRIENDS_COMMAND, userId));
+        }
+
         return null;
     }
 }
