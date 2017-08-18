@@ -1,7 +1,6 @@
 package hu.bets.users.web.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
+import hu.bets.users.model.User;
 import hu.bets.users.service.DataAccessException;
 import hu.bets.users.service.FriendsService;
 import hu.bets.users.web.model.Result;
@@ -14,13 +13,14 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @Component
 @Path("/users/football/v1")
 public class UsersResource {
 
+    private static final String EMPTY_TOKEN = "empty_token";
     private FriendsService friendsService;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public UsersResource(FriendsService friendsService) {
         this.friendsService = friendsService;
@@ -40,9 +40,9 @@ public class UsersResource {
         try {
             UserWithToken userWithToken = new Json().fromJson(toRegisterPayload, UserWithToken.class);
             friendsService.register(userWithToken.getUser());
-            return new Json().toJson(Result.success("User successfully registered."));
+            return new Json().toJson(Result.success("User successfully registered.", EMPTY_TOKEN));
         } catch (DataAccessException e) {
-            return new Json().toJson(Result.error("Unable to register user: " + e.getMessage()));
+            return new Json().toJson(Result.error("Unable to register user: " + e.getMessage(), EMPTY_TOKEN));
         }
     }
 
@@ -51,6 +51,21 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public String getFriends(String friendsPayload) {
+        try {
+            UserWithToken userWithToken = new Json().fromJson(friendsPayload, UserWithToken.class);
+            List<User> friends = friendsService.getFriends(userWithToken.getUser().getUserId());
+            return new Json().toJson(Result.success(friends, EMPTY_TOKEN));
+        } catch (DataAccessException e) {
+            return new Json().toJson(Result.error("Unable to register user: " + e.getMessage(), EMPTY_TOKEN));
+        }
+    }
+
+    @POST
+    @Path("/update")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public String updateFriends(String updateFriendsPayload) {
         return "";
     }
+
 }

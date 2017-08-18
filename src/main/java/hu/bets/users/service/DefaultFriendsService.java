@@ -2,10 +2,11 @@ package hu.bets.users.service;
 
 import hu.bets.users.dao.FriendsDAO;
 import hu.bets.users.model.LeagueChangedPayload;
-import hu.bets.users.model.LeagueUpdateResult;
 import hu.bets.users.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class DefaultFriendsService implements FriendsService {
 
@@ -17,7 +18,7 @@ public class DefaultFriendsService implements FriendsService {
     }
 
     @Override
-    public LeagueUpdateResult updateLeague(LeagueChangedPayload payload) {
+    public List<User> updateLeague(LeagueChangedPayload payload) {
         LOGGER.info("Updating {}'s league with the following payload: {}", payload.getOriginatingUserId(), payload);
         try {
             LOGGER.info("Adding connections: {}", payload.getFriendsTracked());
@@ -33,7 +34,7 @@ public class DefaultFriendsService implements FriendsService {
             throw new DataAccessException(e);
         }
 
-        return null;
+        return friendsDAO.getFriends(payload.getOriginatingUserId());
     }
 
     @Override
@@ -42,6 +43,19 @@ public class DefaultFriendsService implements FriendsService {
         try {
             friendsDAO.registerUser(user);
             LOGGER.info("Successfully registered user: {}", user);
+        } catch (Exception e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    @Override
+    public List<User> getFriends(String userId) {
+        LOGGER.info("About to query friends for user: {}", userId);
+        try {
+            List<User> friends = friendsDAO.getFriends(userId);
+            LOGGER.info("Query run successfully. Result is: {}", friends);
+
+            return friends;
         } catch (Exception e) {
             throw new DataAccessException(e);
         }

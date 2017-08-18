@@ -31,4 +31,11 @@ public interface FriendsDAO {
      */
     void registerUser(User user);
 
+    /**
+     * Queries the 'TRACKS' relationship to find users assocaited with userId.
+     *
+     * @param userId - id of the originating user
+     * @return list of connections associated to the originating user.
+     */
+    List<User> getFriends(String userId);
 }
