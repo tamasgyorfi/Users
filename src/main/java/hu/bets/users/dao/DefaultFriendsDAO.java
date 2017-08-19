@@ -19,7 +19,7 @@ public class DefaultFriendsDAO implements FriendsDAO {
 
     private static final String ALL_FRIENDS_COMMAND = "MATCH p=(u1:User { " + USER_ID + ":'%s' })-[:TRACKS]-(u2) RETURN u2." + USER_ID + ", u2." + NAME + ", u2." + PROFILE_PICTURE + "";
     private static final String CREATE_USER_COMMAND = "MERGE (u:User {" + USER_ID + ": '%s', " + NAME + ":'%s', " + PROFILE_PICTURE + ": '%s'})";
-    private static final String CREATE_RELATIONSHIP_COMMAND = "MATCH (u1:User {" + USER_ID + ":'%s'}), (u2:User {" + USER_ID + ":'%s'}) CREATE (u1)-[:TRACKS]->(u2)";
+    private static final String CREATE_RELATIONSHIP_COMMAND = "MATCH (u1:User {" + USER_ID + ":'%s'}), (u2:User {" + USER_ID + ":'%s'}) CREATE UNIQUE (u1)-[:TRACKS]->(u2)";
     private static final String DELETE_RELATIONSHIP_COMMAND = "MATCH (:User {" + USER_ID + ": '%s'})-[r:TRACKS]-(:User {" + USER_ID + ": '%s'}) DELETE r";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFriendsDAO.class);
