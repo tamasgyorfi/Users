@@ -1,7 +1,7 @@
 package hu.bets.users.service;
 
 import hu.bets.users.dao.FriendsDAO;
-import hu.bets.users.model.LeagueChangedPayload;
+import hu.bets.users.model.UpdateFriendsPayload;
 import hu.bets.users.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ public class DefaultFriendsService implements FriendsService {
     }
 
     @Override
-    public List<User> updateLeague(LeagueChangedPayload payload) {
+    public List<User> updateLeague(UpdateFriendsPayload payload) {
         LOGGER.info("Updating {}'s league with the following payload: {}", payload.getOriginatingUserId(), payload);
         try {
             LOGGER.info("Adding connections: {}", payload.getFriendsTracked());
@@ -30,11 +30,11 @@ public class DefaultFriendsService implements FriendsService {
             LOGGER.info("Successfully added {} friends out of {}", nrOfFriendsUntracked, payload.getFriendsUntracked().size());
 
             LOGGER.info("Updating {}'s league was successful.", payload.getOriginatingUserId(), payload);
+
+            return friendsDAO.getFriends(payload.getOriginatingUserId());
         } catch (Exception e) {
             throw new DataAccessException(e);
         }
-
-        return friendsDAO.getFriends(payload.getOriginatingUserId());
     }
 
     @Override

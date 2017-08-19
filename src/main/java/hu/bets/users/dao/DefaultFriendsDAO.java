@@ -31,22 +31,22 @@ public class DefaultFriendsDAO implements FriendsDAO {
     }
 
     @Override
-    public int trackNewFriends(String originatingUserId, List<User> friendsToTrack) {
-        return executeBatchCommand(DELETE_RELATIONSHIP_COMMAND, originatingUserId, friendsToTrack);
+    public int trackNewFriends(String originatingUserId, List<String> friendsToTrack) {
+        return executeBatchCommand(CREATE_RELATIONSHIP_COMMAND, originatingUserId, friendsToTrack);
     }
 
     @Override
-    public int untrackFriends(String originatingUserId, List<User> friendsToUntrack) {
-        return executeBatchCommand(CREATE_RELATIONSHIP_COMMAND, originatingUserId, friendsToUntrack);
+    public int untrackFriends(String originatingUserId, List<String> friendsToUntrack) {
+        return executeBatchCommand(DELETE_RELATIONSHIP_COMMAND, originatingUserId, friendsToUntrack);
     }
 
-    private int executeBatchCommand(String command, String originatingUserId, List<User> users) {
+    private int executeBatchCommand(String command, String originatingUserId, List<String> users) {
         int error = 0;
-        for (User user : users) {
+        for (String user : users) {
             try (Session session = driver.session("register.connection")) {
-                session.run(String.format(command, originatingUserId, user.getUserId()));
+                session.run(String.format(command, originatingUserId, user));
             } catch (Exception e) {
-                LOGGER.error("Unable to execute command {} for users {} and {}.", command, originatingUserId, user.getUserId());
+                LOGGER.error("Unable to execute command {} for users {} and {}.", command, originatingUserId, user);
                 error++;
             }
         }

@@ -1,9 +1,11 @@
 package hu.bets.users.web.api;
 
+import hu.bets.users.model.UpdateFriendsPayload;
 import hu.bets.users.model.User;
 import hu.bets.users.service.DataAccessException;
 import hu.bets.users.service.FriendsService;
 import hu.bets.users.web.model.Result;
+import hu.bets.users.web.model.UpdateFriendsWithToken;
 import hu.bets.users.web.model.UserWithToken;
 import hu.bets.users.web.util.Json;
 import org.springframework.stereotype.Component;
@@ -56,7 +58,7 @@ public class UsersResource {
             List<User> friends = friendsService.getFriends(userWithToken.getUser().getUserId());
             return new Json().toJson(Result.success(friends, EMPTY_TOKEN));
         } catch (DataAccessException e) {
-            return new Json().toJson(Result.error("Unable to register user: " + e.getMessage(), EMPTY_TOKEN));
+            return new Json().toJson(Result.error("Unable to retrieve friends: " + e.getMessage(), EMPTY_TOKEN));
         }
     }
 
@@ -65,7 +67,12 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public String updateFriends(String updateFriendsPayload) {
-        return "";
+        try {
+            UpdateFriendsWithToken userWithToken = new Json().fromJson(updateFriendsPayload, UpdateFriendsWithToken.class);
+            List<User> friends = friendsService.updateLeague(userWithToken.getUpdateFriendsPayload());
+            return new Json().toJson(Result.success(friends, EMPTY_TOKEN));
+        } catch (DataAccessException e) {
+            return new Json().toJson(Result.error("Unable to update friends: " + e.getMessage(), EMPTY_TOKEN));
+        }
     }
-
 }

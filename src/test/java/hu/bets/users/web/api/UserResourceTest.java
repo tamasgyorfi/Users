@@ -1,16 +1,18 @@
 package hu.bets.users.web.api;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.bets.servicediscovery.EurekaFacade;
 import hu.bets.users.config.ApplicationConfig;
 import hu.bets.users.config.DatabaseConfig;
 import hu.bets.users.config.WebConfig;
+import hu.bets.users.model.UpdateFriendsPayload;
+import hu.bets.users.web.model.UpdateFriendsWithToken;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -86,8 +89,41 @@ public class UserResourceTest {
     }
 
     @Test
-    public void shoudReturnAllFriendsForAUser() throws IOException {
+    public void shouldReturnAllFriendsForAUser() throws IOException {
 
+        createUsers();
+        String result = runPost("/users/football/v1/friends", "{\"id\": \"101\" , \"token\":\"\"}");
+
+        assertEquals("{\"payload\":[{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+    }
+
+    @Test
+    public void shouldUpdateFriendsForAUser() throws IOException {
+
+        createUsers();
+        UpdateFriendsPayload payload = new UpdateFriendsPayload("101", Arrays.asList("404"), Arrays.asList("202"));
+        String stringPayload = new ObjectMapper().writeValueAsString(new UpdateFriendsWithToken(payload, "empty_token"));
+
+        String result = runPost("/users/football/v1/update", stringPayload);
+
+        assertEquals("{\"payload\":[{\"id\":\"404\",\"pictureUrl\":\"llll\",\"name\":\"Ronn\"},{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+    }
+
+    private String runPost(String path, String payload) throws IOException {
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+        HttpPost request = new HttpPost("http://" + System.getProperties().getProperty("HOST") +
+                ":" + System.getProperties().getProperty("PORT") + path);
+        StringEntity entity = new StringEntity(payload);
+
+        entity.setContentType("application/json");
+        request.setEntity(entity);
+
+        CloseableHttpResponse result = client.execute(request);
+
+        return EntityUtils.toString(result.getEntity());
+    }
+
+    private void createUsers() {
         Driver driver = context.getBean(Driver.class);
         try (Session session = driver.session("read.user")) {
             session.run("MERGE (u:User {userId: '101', name:'John', profilePicture: 'none'})");
@@ -99,24 +135,6 @@ public class UserResourceTest {
             session.run("MATCH (u1:User {userId:'101'}), (u2:User {userId:'303'}) CREATE (u1)-[:TRACKS]->(u2)");
             session.run("MATCH (u1:User {userId:'303'}), (u2:User {userId:'404'}) CREATE (u1)-[:TRACKS]->(u2)");
         }
-
-        String result = runPost("/users/football/v1/friends", "{\"id\": \"101\" , \"token\":\"\"}");
-
-        assertEquals("{\"payload\":[{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
-    }
-
-    private String runPost(String path, String payload) throws IOException {
-        CloseableHttpClient client = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://" + System.getProperties().getProperty("HOST") +
-                ":" + System.getProperties().getProperty("PORT") + path);
-        StringEntity entity = new StringEntity(payload, HTTP.UTF_8);
-
-        entity.setContentType("application/json");
-        request.setEntity(entity);
-
-        CloseableHttpResponse result = client.execute(request);
-
-        return EntityUtils.toString(request.getEntity());
     }
 
     private static class FakeApplicationConfig extends ApplicationConfig {

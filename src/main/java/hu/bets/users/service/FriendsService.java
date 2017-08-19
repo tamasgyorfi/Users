@@ -1,6 +1,6 @@
 package hu.bets.users.service;
 
-import hu.bets.users.model.LeagueChangedPayload;
+import hu.bets.users.model.UpdateFriendsPayload;
 import hu.bets.users.model.User;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public interface FriendsService {
      * @param payload - payload containing friends to track and untrack
      * @return the resulting connections
      */
-    List<User> updateLeague(LeagueChangedPayload payload);
+    List<User> updateLeague(UpdateFriendsPayload payload);
 
     /**
      * Registers a user with no connections iniatially.
