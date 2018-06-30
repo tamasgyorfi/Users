@@ -64,6 +64,7 @@ public class UserResourceTest {
         TimeUnit.SECONDS.sleep(5);
     }
 
+
     @After
     public void tearDown() {
         Driver driver = context.getBean(Driver.class);
