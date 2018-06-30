@@ -46,13 +46,14 @@ public class UserResourceTest {
         String home = System.getProperty("user.dir");
         URL resource = UserResourceTest.class.getClassLoader().getResource(CREDENTIALS_FILE);
 
-        List<String> strings = Files.readAllLines(Paths.get(resource.toURI()));
+        if (resource != null) {
+            List<String> strings = Files.readAllLines(Paths.get(resource.toURI()));
 
-        strings.forEach(line -> {
-            String[] var = line.split("=");
-            System.getProperties().setProperty(var[0], var[1]);
-        });
-
+            strings.forEach(line -> {
+                String[] var = line.split("=");
+                System.getProperties().setProperty(var[0], var[1]);
+            });
+        }
         context = new AnnotationConfigApplicationContext(
                 FakeApplicationConfig.class,
                 DatabaseConfig.class,
@@ -92,7 +93,7 @@ public class UserResourceTest {
     public void shouldReturnAllFriendsForAUser() throws IOException {
 
         createUsers();
-        String result = runPost("/users/football/v1/friends", "{\"id\": \"101\" , \"token\":\"\"}");
+        String result = runPost("/users/football/v1/friends/101", "{\"id\": \"101\" , \"token\":\"\"}");
 
         assertEquals("{\"payload\":[{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
     }
