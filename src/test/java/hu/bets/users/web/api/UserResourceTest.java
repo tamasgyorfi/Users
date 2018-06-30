@@ -61,7 +61,7 @@ public class UserResourceTest {
 
         context.getBean(Server.class).start();
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(5);
     }
 
     @After
