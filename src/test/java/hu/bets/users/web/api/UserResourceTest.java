@@ -18,10 +18,7 @@ import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -111,6 +108,22 @@ public class UserResourceTest {
         assertEquals("{\"payload\":[{\"id\":\"404\",\"pictureUrl\":\"llll\",\"name\":\"Ronn\"},{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
     }
 
+    @Test
+    public void shouldRegisterAUserOnlyOnce() throws IOException {
+
+        runPost("/users/football/v1/register", "{\"id\": \"id1\" , \"pictureUrl\":\"none \", \"name\":\"name\", \"token\":\"\"}");
+        runPost("/users/football/v1/register", "{\"id\": \"id1\" , \"pictureUrl\":\"none\", \"name\":\"name\", \"token\":\"one-token\"}");
+
+        Driver driver = context.getBean(Driver.class);
+        try (Session session = driver.session("read.user")) {
+            StatementResult result = session.run("MATCH (n:User) RETURN n");
+
+            List<Record> records = result.list();
+
+            assertEquals(1, records.size());
+        }
+    }
+
     private String runPost(String path, String payload) throws IOException {
         CloseableHttpClient client = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("http://" + System.getProperties().getProperty("HOST") +
@@ -122,7 +135,9 @@ public class UserResourceTest {
 
         CloseableHttpResponse result = client.execute(request);
 
-        return EntityUtils.toString(result.getEntity());
+        String res =  EntityUtils.toString(result.getEntity());
+        System.out.println(res);
+        return res;
     }
 
     private void createUsers() {

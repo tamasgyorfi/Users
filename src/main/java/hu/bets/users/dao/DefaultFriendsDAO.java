@@ -1,5 +1,6 @@
 package hu.bets.users.dao;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import hu.bets.users.model.User;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.Record;
@@ -17,6 +18,7 @@ public class DefaultFriendsDAO implements FriendsDAO {
     private static String PROFILE_PICTURE = "profilePicture";
     private static String NAME = "name";
 
+    private static final String IS_USER_REGISTERED_COMMAND = "MATCH (n) WHERE n."+USER_ID+"='%s'  RETURN n";
     private static final String ALL_FRIENDS_COMMAND = "MATCH p=(u1:User { " + USER_ID + ":'%s' })-[:TRACKS]-(u2) RETURN u2." + USER_ID + ", u2." + NAME + ", u2." + PROFILE_PICTURE + "";
     private static final String CREATE_USER_COMMAND = "MERGE (u:User {" + USER_ID + ": '%s', " + NAME + ":'%s', " + PROFILE_PICTURE + ": '%s'})";
     private static final String CREATE_RELATIONSHIP_COMMAND = "MATCH (u1:User {" + USER_ID + ":'%s'}), (u2:User {" + USER_ID + ":'%s'}) CREATE UNIQUE (u1)-[:TRACKS]->(u2)";
@@ -57,7 +59,12 @@ public class DefaultFriendsDAO implements FriendsDAO {
     @Override
     public void registerUser(User user) {
         try (Session session = driver.session("register.user")) {
-            session.run(String.format(CREATE_USER_COMMAND, user.getUserId(), user.getName(), user.getProfilePictureUrl()));
+            StatementResult result = session.run(String.format(IS_USER_REGISTERED_COMMAND, user.getUserId()));
+            if (result.list().isEmpty()) {
+                session.run(String.format(CREATE_USER_COMMAND, user.getUserId(), user.getName(), user.getProfilePictureUrl()));
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Unable to register user.", e);
         }
     }
 
