@@ -2,15 +2,14 @@ package hu.bets.users.dao;
 
 import ch.qos.logback.core.encoder.EchoEncoder;
 import hu.bets.users.model.User;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DefaultFriendsDAO implements FriendsDAO {
 
@@ -19,7 +18,7 @@ public class DefaultFriendsDAO implements FriendsDAO {
     private static String NAME = "name";
 
     private static final String IS_USER_REGISTERED_COMMAND = "MATCH (n) WHERE n."+USER_ID+"='%s'  RETURN n";
-    private static final String ALL_FRIENDS_COMMAND = "MATCH p=(u1:User { " + USER_ID + ":'%s' })-[:TRACKS]-(u2) RETURN u2." + USER_ID + ", u2." + NAME + ", u2." + PROFILE_PICTURE + "";
+    private static final String ALL_FRIENDS_COMMAND = "MATCH p=(u1:User { " + USER_ID + ":'%s' })-[:TRACKS]-(u2) RETURN u1 as user, collect(distinct u2) as friends";
     private static final String CREATE_USER_COMMAND = "MERGE (u:User {" + USER_ID + ": '%s', " + NAME + ":'%s', " + PROFILE_PICTURE + ": '%s'})";
     private static final String CREATE_RELATIONSHIP_COMMAND = "MATCH (u1:User {" + USER_ID + ":'%s'}), (u2:User {" + USER_ID + ":'%s'}) CREATE UNIQUE (u1)-[:TRACKS]->(u2)";
     private static final String DELETE_RELATIONSHIP_COMMAND = "MATCH (:User {" + USER_ID + ": '%s'})-[r:TRACKS]-(:User {" + USER_ID + ": '%s'}) DELETE r";
@@ -76,24 +75,19 @@ public class DefaultFriendsDAO implements FriendsDAO {
             StatementResult result = session.run(String.format(ALL_FRIENDS_COMMAND, userId));
             List<Record> list = result.list();
 
-            for (Record record : list) {
-                String id = "";
-                String name = "";
-                String profilePic = "";
-                for (int i = 0; i < result.keys().size(); i++) {
-                    String key = result.keys().get(i);
-                    if (key.contains(USER_ID)) {
-                        id = record.values().get(i).asString();
-                    } else if (key.contains(NAME)) {
-                        name = record.values().get(i).asString();
-                    } else if (key.contains(PROFILE_PICTURE)) {
-                        profilePic = record.values().get(i).asString();
-                    }
+            if (!list.isEmpty()) {
+                retVal.add(getUser(list.get(0).values().get(0).asMap()));
+                Iterable<Value> user = list.get(0).values().get(1).values();
+
+                for (Value val : user) {
+                    retVal.add(getUser(val.asMap()));
                 }
-                retVal.add(new User(id, profilePic, name));
             }
         }
-
         return retVal;
+    }
+
+    private User getUser(Map map) {
+        return new User(map.get(USER_ID).toString(), map.get(PROFILE_PICTURE).toString(), map.get(NAME).toString());
     }
 }

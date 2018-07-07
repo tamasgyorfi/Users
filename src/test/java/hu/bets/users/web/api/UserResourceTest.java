@@ -93,7 +93,26 @@ public class UserResourceTest {
         createUsers();
         String result = runPost("/users/football/v1/friends/101", "{\"id\": \"101\" , \"token\":\"\"}");
 
-        assertEquals("{\"payload\":[{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+        assertEquals("{\"payload\":[{\"id\":\"101\",\"pictureUrl\":\"none\",\"name\":\"John\"},{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"},{\"id\":\"202\",\"pictureUrl\":\"nnnn\",\"name\":\"Jack\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+    }
+
+    @Test
+    public void shouldNotCrashForInvalidId() throws IOException {
+
+        createUsers();
+        String result = runPost("/users/football/v1/friends/100001", "{\"id\": \"101\" , \"token\":\"\"}");
+
+        assertEquals("{\"payload\":[],\"error\":\"\",\"token\":\"empty_token\"}", result);
+    }
+
+
+    @Test
+    public void shouldNotCrashWhenNoFriendsFound() throws IOException {
+
+        createUsers();
+        String result = runPost("/users/football/v1/friends/505", "{\"id\": \"101\" , \"token\":\"\"}");
+
+        assertEquals("{\"payload\":[],\"error\":\"\",\"token\":\"empty_token\"}", result);
     }
 
     @Test
@@ -105,7 +124,7 @@ public class UserResourceTest {
 
         String result = runPost("/users/football/v1/update", stringPayload);
 
-        assertEquals("{\"payload\":[{\"id\":\"404\",\"pictureUrl\":\"llll\",\"name\":\"Ronn\"},{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
+        assertEquals("{\"payload\":[{\"id\":\"101\",\"pictureUrl\":\"none\",\"name\":\"John\"},{\"id\":\"404\",\"pictureUrl\":\"llll\",\"name\":\"Ronn\"},{\"id\":\"303\",\"pictureUrl\":\"mmmm\",\"name\":\"Bill\"}],\"error\":\"\",\"token\":\"empty_token\"}", result);
     }
 
     @Test
@@ -147,6 +166,7 @@ public class UserResourceTest {
             session.run("MERGE (u:User {userId: '202', name:'Jack', profilePicture: 'nnnn'})");
             session.run("MERGE (u:User {userId: '303', name:'Bill', profilePicture: 'mmmm'})");
             session.run("MERGE (u:User {userId: '404', name:'Ronn', profilePicture: 'llll'})");
+            session.run("MERGE (u:User {userId: '505', name:'Ronnie', profilePicture: 'llll'})");
 
             session.run("MATCH (u1:User {userId:'101'}), (u2:User {userId:'202'}) CREATE (u1)-[:TRACKS]->(u2)");
             session.run("MATCH (u1:User {userId:'101'}), (u2:User {userId:'303'}) CREATE (u1)-[:TRACKS]->(u2)");
